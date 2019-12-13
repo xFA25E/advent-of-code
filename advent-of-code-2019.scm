@@ -20,7 +20,7 @@
       acc
       (sum-fuels (cdr masses) (+ acc (fn (car masses))) fn)))
 
-(define (day-1) (sum-fuels modules-masses 0 calc-fuel))
+(define (day-1-a) (sum-fuels modules-masses 0 calc-fuel))
 
 (define (fuel-for-fuel fuel acc)
   (let ((fl (fuel-for-mass fuel)))
@@ -28,7 +28,7 @@
         acc
         (fuel-for-fuel fl (+ acc fl)))))
 
-(define (day-2)
+(define (day-1-b)
   (sum-fuels modules-masses 0
              (lambda (m)
                (let ((fuel-mass (fuel-for-mass m)))
