@@ -1,3 +1,2 @@
-#+TITLE: Advent of code solutions
+#+TITLE: Advent of code 2019 solutions (in guile)
 [[adventofcode.com]]
-- 2019
