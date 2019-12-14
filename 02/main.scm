@@ -31,23 +31,20 @@
   (let ((program (computer-parse computer-program)))
     (vector-ref (computer-run (set-inputs program 12 2) 0) 0)))
 
-(define (generate-inputs)
-  (define (inner-1 n b acc)
-    (if (<= 0 n)
-        (inner-1 (1- n) b (cons (cons n b) acc))
+(define (generate-inputs beg end)
+  (define (inner a b acc)
+    (if (<= beg a)
+        (if (<= beg b)
+            (inner a (1- b) (cons (cons a b) acc))
+            (inner (1- a) end acc))
         acc))
 
-  (define (inner-2 n acc)
-    (if (<= 0 n)
-        (inner-2 (1- n) (inner-1 99 n acc))
-        acc))
-
-  (inner-2 99 '()))
+  (inner end end '()))
 
 (define part-two-result 19690720)
 
 (define (part-two)
-  (let ((inputs (generate-inputs)))
+  (let ((inputs (generate-inputs 0 99)))
     (letrec ((inner
               (lambda (acc)
                 (if (null? acc)
