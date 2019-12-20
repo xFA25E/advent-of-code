@@ -30,9 +30,16 @@
   (point-create (+ (point-x point) (vector-x vector))
                 (+ (point-y point) (vector-y vector))))
 
-(define (segment-create point-1 point-2) (cons point-1 point-2))
+(define (distance point-1 point-2)
+  (+ (abs (- (point-x point-1) (point-x point-2)))
+     (abs (- (point-y point-1) (point-y point-2)))))
+
+(define (segment-create point-1 point-2)
+  (cons point-1 (cons point-2 (distance point-1 point-2))))
+
 (define (segment-point-1 segment) (car segment))
-(define (segment-point-2 segment) (cdr segment))
+(define (segment-point-2 segment) (cadr segment))
+(define (segment-length segment) (cddr segment))
 
 (define (closer-to-zero point-1 point-2)
   (if (or (and (positive? point-1) (positive? point-2))
@@ -94,7 +101,7 @@
              (point-create (closer-to-zero point-min-1-x point-max-2-x)
                            point-1-1-y))
             ((<= point-min-2-x point-min-1-x point-max-2-x)
-             (if (<= point-min-2-x point-max-1-x point-max-2-x)
+             (if (<= point-min-2-x popint-max-1-x point-max-2-x)
                  (point-create (closer-to-zero point-min-1-x point-max-1-x)
                                point-1-1-y)
                  (point-create (closer-to-zero point-min-1-x point-max-2-x)
@@ -118,7 +125,8 @@
 
      (else #f))))
 
-(define (distance point) (+ (abs (point-x point)) (abs (point-y point))))
+(define (distance-to-origin point)
+  (+ (abs (point-x point)) (abs (point-y point))))
 
 (define (wire-parse s)
   (let loop ((wire (string-split s #\,)) (point (point-create 0 0)) (acc '()))
@@ -129,26 +137,42 @@
                 next-point
                 (cons (segment-create point next-point) acc))))))
 
-(define (find-intersections wire-1 wire-2 intersections)
+(define (find-intersections wire-1 length-1 wire-2 intersections)
   (if (null? wire-1)
       intersections
       (find-intersections
-       (cdr wire-1) wire-2
+       (cdr wire-1)
+       (+ length-1 (segment-length (car wire-1)))
+       wire-2
        (let loop ((segment (car wire-1))
                   (wire wire-2)
+                  (length-2 0)
                   (intersections intersections))
          (if (null? wire)
              intersections
              (let ((intersection (segment-intersect? segment (car wire))))
                (if intersection
-                   (loop segment (cdr wire) (cons intersection intersections))
-                   (loop segment (cdr wire) intersections))))))))
+                   (loop segment
+                         (cdr wire)
+                         (+ length-2 (segment-length (car wire)))
+                         (cons (cons intersection
+                                     (+ length-1 length-2
+                                        (distance (segment-point-1 segment)
+                                                  intersection)
+                                        (distance (segment-point-1 (car wire))
+                                                  intersection)))
+                               intersections))
+                   (loop segment
+                         (cdr wire)
+                         (+ length-2 (segment-length (car wire)))
+                         intersections))))))))
 
 (define (find-min-intersection wire-1 wire-2)
   (apply min (filter! (lambda (a) (not (zero? a)))
-                      (map distance
+                      (map (lambda (s) (distance-to-origin (car s)))
                            (find-intersections
-                            (wire-parse wire-1) (wire-parse wire-2) '())))))
+                            (wire-parse wire-1) 0
+                            (wire-parse wire-2) '())))))
 
 (let ((w1 "R75,D30,R83,U83,L12,D49,R71,U7,L72")
       (w2 "U62,R66,U55,R34,D71,R55,D58,R83"))
@@ -165,6 +189,31 @@
         (w2 (cdr wires)))
     (find-min-intersection w1 w2)))
 
+(define (find-min-intersection-path wire-1 wire-2)
+  (apply min (filter! (lambda (a) (not (zero? a)))
+                      (map cdr (find-intersections
+                                (wire-parse wire-1) 0
+                                (wire-parse wire-2) '())))))
+
+(let ((w1 "R75,D30,R83,U83,L12,D49,R71,U7,L72")
+      (w2 "U62,R66,U55,R34,D71,R55,D58,R83"))
+  (find-min-intersection-path w1 w2))
+;; should be 610
+
+(let ((w1 "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51")
+      (w2 "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"))
+  (find-min-intersection-path w1 w2))
+;; should be 410
+
+(define (part-two)
+  (let ((w1 (car wires))
+        (w2 (cdr wires)))
+    (find-min-intersection-path w1 w2)))
+
 (display "Part one: ")
 (display (part-one))
+(newline)
+
+(display "Part two: ")
+(display (part-two))
 (newline)
